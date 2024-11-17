@@ -1,8 +1,28 @@
 ---
-- hosts: all
-- import_playbook: ../static-assignments/common.yml
+# Play 1: Loads dynamic variables for all hosts
+- name: Include dynamic variables
+  hosts: all
+  tasks:
+    - name: Load dynamic variables
+      include_tasks: ../dynamic-assignments/env-vars.yml
+      tags:
+        - always
 
-- hosts: uat-webservers
-- import_playbook: ../static-assignments/uat-webservers.yml
+# Play 2: Imports common configuration for all hosts
+- name: Import common playbook
+  import_playbook: ../static-assignments/common.yml
 
-import_playbook: ../static-assignments/db-servers.yml
+# Play 3: Specific configuration for UAT webservers only
+- name: Configure UAT webservers
+  hosts: uat-webservers
+  tasks:
+    - name: Import UAT specific tasks
+      import_tasks: ../static-assignments/uat-webservers.yml
+
+
+# Play 4: Specific configuration for UAT webservers only
+- name: Configure UAT webservers
+  hosts: uat-webservers
+  tasks:
+    - name: Import UAT specific tasks
+      import_tasks: ../static-assignments/uat-webservers.yml
