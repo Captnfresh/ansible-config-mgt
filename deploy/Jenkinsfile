@@ -1,21 +1,39 @@
 pipeline {
-    agent any
+  agent any
 
   stages {
-    stage('Build') {
+    stage("Initial cleanup") {
       steps {
-        script {
-          sh 'echo "Building Stage"'
+        dir("${WORKSPACE}") {
+          deleteDir()
         }
       }
     }
 
-    stage('Test') {
+    stage('Checkout SCM') {
       steps {
-        script {
-          sh 'echo "Testing Stage"'
+        git branch: 'main', credentialsId: 'jenkins-ssh-key', url: 'git@github.com:Captnfresh/ansible-config-mgt.git'
+      }
+    }
+
+    stage('Test SSH Connection') {
+      steps {
+        sshagent(['jenkins-ssh-key']) {  // Replace with your SSH key credential ID
+          sh 'ssh -o StrictHostKeyChecking=no ubuntu@172.31.91.90 exit'
         }
       }
     }
+
+    stage('Run Ansible playbook') {
+      steps {
+        ansiblePlaybook credentialsId: 'jenkins-ssh-key', disableHostKeyChecking: true, installation: 'ansible-config-mgt', inventory: 'inventory/dev.yml', playbook: 'playbooks/site.yml', vaultTmpPath: ''
+      }
     }
+
+    stage('Clean Workspace after build') {
+      steps {
+        cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenNotBuilt: true, cleanWhenUnstable: true, deleteDirs: true)
+      }
+    }
+  }
 }
